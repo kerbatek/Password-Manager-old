@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Password Manager</title>
+    <style>
+        .container {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+        }
+    </style>
+    <script>
+        async function fetchData(id) {
+            try {
+                const response = await fetch(`/get_password?i=${id}`);
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function createNewDiv(clickedElement, id) {
+
+            const newDiv = document.createElement('div');
+            newDiv.style.backgroundColor = '#ccc';
+            newDiv.style.zIndex = '1';
+            newDiv.style.position = 'absolute';
+
+            const rect = clickedElement.getBoundingClientRect();
+            newDiv.style.top = `${rect.bottom + window.scrollY}px`;
+            newDiv.style.left = `${rect.left + window.scrollX}px`;
+            newDiv.style.width = '250px';
+            newDiv.style.height = '150px';
+
+
+            try {
+                const data = await fetchData(id);
+                newDiv.innerHTML = `e-mail: ${data.email} <br>
+                username: ${data.username} <br>
+                password: ${data.password} <br>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                newDiv.innerText = 'Error loading data';
+            }
+
+
+            const exitButton = document.createElement('button');
+            exitButton.innerText = 'Exit';
+            exitButton.style.position = 'absolute';
+            exitButton.style.bottom = '10px';
+            exitButton.style.right = '10px';
+            exitButton.style.zIndex = '2';
+
+            exitButton.addEventListener('click', () => {
+                newDiv.remove();
+            });
+
+            newDiv.appendChild(exitButton);
+            document.body.appendChild(newDiv);
+            clickedElement.parentElement.appendChild(newDiv);
+        }
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <div>
+            <form action="/add_password" method="POST">
+                <label for="site_name">Site Name (Website):</label>
+                <input type="text" id="site_name" name="site_name" required>
+                <br>
+
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+                <br>
+
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+                <br>
+
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+                <br>
+
+                <input type="submit" value="Save Password">
+            </form>
+        </div>
+        <div>
+            {% if websites %}
+            <br> {% for row in websites %}
+            <div onclick="createNewDiv(this, {{ row['id'] }})">Website: {{ row['website'] }} {{ row['id'] }}</div> <br> {% endfor %} {% endif %}
+        </div>
+    </div>
+</body>
+
+</html>
